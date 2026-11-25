@@ -173,7 +173,8 @@ SKIP  latest-changes/label
 
 ### In CI
 
-Check that the names you require still exist whenever a workflow changes:
+Check that the names you require still exist whenever a workflow changes. This repo's own CI runs the
+same `stuckcheck --repo ... --branch main` step with `GH_TOKEN: ${{ github.token }}` (job `rules-from-github`):
 
 ```yaml
 on:
