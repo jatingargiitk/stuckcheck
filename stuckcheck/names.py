@@ -92,10 +92,6 @@ def render(text, ctx):
     return "".join(out).strip(), exact
 
 
-def uses_matrix(text):
-    return any(re.search(r"\bmatrix\b", m.group(1)) for m in EXPR.finditer(text))
-
-
 def _is_expr(v):
     return isinstance(v, str) and EXPR.search(v) is not None
 

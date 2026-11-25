@@ -192,3 +192,22 @@ def test_classic_protection_json():
         "contexts": ["lint", "legacy"],
     }, rs, "prot")
     assert [r.context for r in rs.checks] == ["lint", "legacy"]
+
+
+def test_fetch_reads_rulesets_and_tolerates_unreadable_protection():
+    from stuckcheck.required import fetch
+    calls = []
+
+    def fake_gh(endpoint):
+        calls.append(endpoint)
+        if endpoint.endswith("/rules/branches/main"):
+            return [{"type": "required_status_checks",
+                     "parameters": {"required_status_checks": [{"context": "lint"}]}}], None
+        return None, "HTTP 404: Branch not protected"
+
+    rs = RequiredSet()
+    fetch("octo/repo", "main", rs, gh=fake_gh)
+    assert calls == ["repos/octo/repo/rules/branches/main",
+                     "repos/octo/repo/branches/main/protection/required_status_checks"]
+    assert [r.context for r in rs.checks] == ["lint"]
+    assert rs.notes == ["classic branch protection not read (HTTP 404: Branch not protected)"]
