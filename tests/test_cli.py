@@ -77,3 +77,15 @@ def test_empty_dir(tmp_path):
 def test_version():
     p = run("--version")
     assert p.returncode == 0 and p.stdout.strip() == "stuckcheck 0.1.0"
+
+
+def test_if_notes_only_with_verbose(tmp_path):
+    wdir = tmp_path / ".github" / "workflows"
+    wdir.mkdir(parents=True)
+    (wdir / "ci.yml").write_text(
+        "on: pull_request\njobs:\n  lint:\n    if: github.repository == 'octo/repo'\n"
+        "    runs-on: u\n    steps: []\n")
+    p = run("check", str(tmp_path), "-r", "lint")
+    assert p.returncode == 0 and "OK    lint" in p.stdout and "if:" not in p.stdout
+    p = run("check", str(tmp_path), "-r", "lint", "-v")
+    assert p.returncode == 0 and "NOTE  lint" in p.stdout and "skipped check counts as passing" in p.stdout

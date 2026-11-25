@@ -5,7 +5,7 @@ import json
 import sys
 
 from . import __version__
-from .analyze import FAIL, WARN, analyze, summarize
+from .analyze import FAIL, WARN, analyze, hide_notes, summarize
 from .names import all_checks
 from .report import as_json, names_text, text
 from .required import RequiredSet, fetch, load_file
@@ -34,7 +34,9 @@ def _parser():
     c.add_argument("--merge-queue", action="store_true", help="the branch uses a merge queue")
     c.add_argument("--fail-on", choices=["fail", "warn"], default="fail",
                    help="exit 1 on FAIL (default) or on WARN too")
-    c.add_argument("--json", action="store_true", help="JSON output")
+    c.add_argument("--verbose", "-v", action="store_true",
+                   help="also show notes: required jobs with an `if:` that can skip them (a skipped check passes)")
+    c.add_argument("--json", action="store_true", help="JSON output (always includes notes)")
 
     n = sub.add_parser("names", help="list the check names every job reports")
     n.add_argument("path", nargs="?", default=".", help="repo root or .github/workflows dir (default: .)")
@@ -86,6 +88,8 @@ def main(argv=None):
         return USAGE_EXIT
 
     verdicts = analyze(rs, checks, args.branch)
+    if not args.verbose and not args.json:
+        hide_notes(verdicts)
     if args.json:
         print(as_json(rs, checks, workflows, verdicts, args.branch))
     else:

@@ -263,3 +263,12 @@ def summarize(verdicts):
     for v in verdicts:
         counts[v.verdict] += 1
     return counts
+
+
+def hide_notes(verdicts):
+    """Drop NOTE-level issues (for terse text output) and recompute each verdict."""
+    for v in verdicts:
+        if v.verdict == SKIP:
+            continue
+        v.issues = [i for i in v.issues if i.severity != NOTE]
+        v.verdict = _worst(v.issues)
