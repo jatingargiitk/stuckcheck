@@ -92,8 +92,8 @@ def trigger_issues(wf, base, merge_queue):
     out = []
     if merge_queue and "merge_group" not in events:
         out.append(Issue(FAIL, "merge_group",
-                         "the branch uses a merge queue but %s has no merge_group trigger: queued merges "
-                         "wait for this check until they time out" % wf.file,
+                         "the branch uses a merge queue but %s has no merge_group trigger, so the check "
+                         "is never reported for a queued merge and the merge fails" % wf.file,
                          "add `merge_group:` to `on:`"))
     pr = [e for e in PR_EVENTS if e in events]
     if pr:
