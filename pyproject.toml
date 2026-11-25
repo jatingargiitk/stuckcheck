@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stuckcheck"
+version = "0.1.0"
+description = "Find the required status checks your pull requests will never get: renamed or drifted matrix job names, path-filtered workflows, missing merge_group, events that don't count."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = ["PyYAML>=5.1"]
+authors = [{ name = "Jatin Garg" }]
+keywords = ["github-actions", "required-status-checks", "branch-protection", "rulesets", "merge-queue", "ci"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+stuckcheck = "stuckcheck.cli:main"
+
+[tool.setuptools]
+packages = ["stuckcheck"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

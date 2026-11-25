@@ -1,0 +1,16 @@
+name: Browser tests
+on:
+  workflow_call:
+    inputs:
+      node:
+        type: string
+        required: true
+jobs:
+  browser:
+    name: ${{ matrix.browser }} on node ${{ inputs.node }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - run: echo ${{ matrix.browser }}

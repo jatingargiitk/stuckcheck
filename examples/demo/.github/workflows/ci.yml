@@ -1,0 +1,22 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo lint
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: [3.9, 3.10, 3.11]
+    steps:
+      - run: echo test ${{ matrix.python }}
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo build

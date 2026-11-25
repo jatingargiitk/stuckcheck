@@ -1,0 +1,27 @@
+[
+  {
+    "type": "pull_request",
+    "parameters": {"required_approving_review_count": 1},
+    "ruleset_source_type": "Repository",
+    "ruleset_source": "example/demo",
+    "ruleset_id": 1
+  },
+  {
+    "type": "required_status_checks",
+    "parameters": {
+      "strict_required_status_checks_policy": false,
+      "required_status_checks": [
+        {"context": "lint", "integration_id": 15368},
+        {"context": "test (3.10)", "integration_id": 15368},
+        {"context": "build"},
+        {"context": "Build docs", "integration_id": 15368},
+        {"context": "e2e / chromium on node 22"},
+        {"context": "package"},
+        {"context": "Vercel", "integration_id": 8329}
+      ]
+    },
+    "ruleset_source_type": "Repository",
+    "ruleset_source": "example/demo",
+    "ruleset_id": 1
+  }
+]

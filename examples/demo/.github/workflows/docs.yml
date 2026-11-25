@@ -1,0 +1,10 @@
+name: Docs
+on:
+  pull_request:
+    paths: ['docs/**', 'mkdocs.yml']
+jobs:
+  docs:
+    name: Build docs
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo docs
