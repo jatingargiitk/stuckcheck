@@ -1,7 +1,7 @@
 """Work out the check-run names a workflow's jobs report.
 
 A job's check run is named after ``jobs.<id>.name`` (or the job id). A matrix
-job that doesn't use ``matrix`` in its name gets the combination's values
+job whose name has no ``${{ }}`` expression gets the combination's values
 appended, e.g. ``test (ubuntu-latest, 3.12)``. A job that calls a reusable
 workflow reports ``<caller> / <called job>`` for every job in the called file.
 
@@ -101,10 +101,20 @@ def _is_expr(v):
 
 
 def expand_matrix(matrix):
-    """Expand ``strategy.matrix`` into combinations.
+    """Expand ``strategy.matrix`` into combinations (key order = insertion order).
 
-    Returns a list of dicts (key order = display order), or None when the
-    matrix is built at run time and can't be expanded statically.
+    Returns a list of dicts, or None when the matrix is built at run time.
+    """
+    pairs = expand_matrix_shown(matrix)
+    return None if pairs is None else [c for c, _ in pairs]
+
+
+def expand_matrix_shown(matrix):
+    """Like expand_matrix, but each item is ``(combo, keys shown in the job name)``.
+
+    Checked against real runs: values that ``include`` adds to an existing
+    combination are not shown in the name (``test (ubuntu)``), while a
+    combination that ``include`` creates shows all of its values.
     """
     if not isinstance(matrix, dict):
         return None
@@ -138,7 +148,17 @@ def expand_matrix(matrix):
                 added = True
         if not added:
             extra.append(dict(inc))
-    return combos + extra
+    return [(c, list(base_keys)) for c in combos] + [(c, list(c)) for c in extra]
+
+
+def _flat(value):
+    """Values of a matrix entry as they appear in a job name; objects show their values."""
+    if isinstance(value, dict):
+        out = []
+        for v in value.values():
+            out.extend(_flat(v))
+        return out
+    return [fmt(value)]
 
 
 class Check:
@@ -165,21 +185,30 @@ class Check:
                 "job": self.path, "note": self.note}
 
 
-def _job_label(jid, job, combo, dynamic, ctx):
+def _job_label(jid, job, combo, shown, dynamic, ctx):
+    """Check name for one job (one matrix combination).
+
+    Checked against real runs: the matrix values are appended only when the job
+    has no ``name`` or a ``name`` without any ``${{ }}`` expression. A name such
+    as ``Lint ${{ github.event_name }}`` gets no suffix, even in a matrix.
+    """
     raw = job.get("name")
     if isinstance(raw, str) and raw.strip():
         name, exact = render(raw, ctx)
-        refs = uses_matrix(raw)
+        has_expr = EXPR.search(raw) is not None
     else:
-        name, exact, refs = jid, True, False
-    if "strategy" in job and isinstance(job.get("strategy"), dict) and "matrix" in job["strategy"] and not refs:
+        name, exact, has_expr = jid, True, False
+    if "strategy" in job and isinstance(job.get("strategy"), dict) and "matrix" in job["strategy"] and not has_expr:
         if dynamic:
             return name + " (*)", False
         if combo:
-            vals = [fmt(v) for v in combo.values()]
+            vals = []
+            for k in shown:
+                vals.extend(_flat(combo[k]))
             if any(v is None for v in vals):
                 exact = False
-            name += " (%s)" % ", ".join("*" if v is None else v for v in vals)
+            if vals:
+                name += " (%s)" % ", ".join("*" if v is None else v for v in vals)
     return name, exact
 
 
@@ -195,14 +224,14 @@ def job_checks(wf, root, top=None, prefix="", inputs=None, depth=0, chain="", co
     for jid, job in wf.jobs.items():
         strategy = job.get("strategy") if isinstance(job.get("strategy"), dict) else {}
         if "matrix" in strategy:
-            combos = expand_matrix(strategy["matrix"])
+            combos = expand_matrix_shown(strategy["matrix"])
             dynamic = combos is None
             if dynamic:
-                combos = [None]
+                combos = [(None, [])]
             elif not combos:
                 continue  # an empty matrix runs no jobs
         else:
-            combos, dynamic = [None], False
+            combos, dynamic = [(None, [])], False
         my_conds = list(conds)
         where = "%s > %s" % (_short(wf.file), jid)
         if job.get("if") is not None:
@@ -214,9 +243,9 @@ def job_checks(wf, root, top=None, prefix="", inputs=None, depth=0, chain="", co
             my_conds.append(("needs", [str(n) for n in needs], where))
         path = chain + " > " + jid if chain else where
         seen = set()
-        for combo in combos:
+        for combo, shown in combos:
             ctx = {"matrix": UNKNOWN if dynamic else (combo or {}), "inputs": UNKNOWN if inputs is None else inputs}
-            label, exact = _job_label(jid, job, combo, dynamic, ctx)
+            label, exact = _job_label(jid, job, combo, shown, dynamic, ctx)
             full = prefix + label
             key = (full, exact)
             if key in seen:

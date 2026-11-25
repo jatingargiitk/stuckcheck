@@ -170,6 +170,16 @@ def condition_issues(check, required_names, checks_by_scope):
     return out
 
 
+def suggest(context, names, limit=4):
+    """Likely intended names: same job with a matrix suffix added or dropped, then close spellings."""
+    uniq = list(dict.fromkeys(names))
+    out = [n for n in uniq if n.startswith(context + " (") or context.startswith(n + " (")]
+    for n in difflib.get_close_matches(context, sorted(uniq), n=limit, cutoff=0.6):
+        if n not in out:
+            out.append(n)
+    return out[:limit]
+
+
 class Verdict:
     def __init__(self, req):
         self.req = req
@@ -211,7 +221,7 @@ def analyze(required, checks, base=None):
         loose = [c for c in checks if not c.exact and c.matches(req.context)]
         v.producers = exact or loose
         if not v.producers:
-            v.suggestions = difflib.get_close_matches(req.context, sorted(set(names)), n=3, cutoff=0.6)
+            v.suggestions = suggest(req.context, names)
             if req.app_id == ACTIONS_APP_ID:
                 v.issues.append(Issue(FAIL, "missing",
                                       "no workflow job reports this name, and the rule expects it from "

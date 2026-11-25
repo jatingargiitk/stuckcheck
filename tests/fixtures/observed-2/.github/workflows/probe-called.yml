@@ -1,0 +1,22 @@
+on:
+  workflow_call:
+    inputs:
+      label:
+        type: string
+        required: true
+jobs:
+  inner3:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        k: [x, y]
+    steps:
+      - run: true
+  named:
+    name: Named
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        k: [x]
+    steps:
+      - run: true

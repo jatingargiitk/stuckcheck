@@ -1,0 +1,61 @@
+name: probe
+on:
+  push:
+    branches: [probe-names]
+jobs:
+  h:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - p: 1
+            q: 2
+          - p: 3
+    steps:
+      - run: true
+  i:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        os: [one]
+        include:
+          - os: three
+            extra: z
+          - extra2: w
+    steps:
+      - run: true
+  j:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        obj: [{a: 1, b: two}]
+        s: [x]
+    steps:
+      - run: true
+  l:
+    name: L ${{ github.event_name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        v: [1]
+    steps:
+      - run: true
+  m:
+    name: M
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        v: [1]
+    steps:
+      - run: true
+  d:
+    uses: ./.github/workflows/probe-called.yml
+    with:
+      label: hello
+  dm:
+    strategy:
+      matrix:
+        z: [p, q]
+    uses: ./.github/workflows/probe-called.yml
+    with:
+      label: m${{ matrix.z }}

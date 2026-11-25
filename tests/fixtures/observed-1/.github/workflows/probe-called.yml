@@ -1,0 +1,19 @@
+on:
+  workflow_call:
+    inputs:
+      label:
+        type: string
+        required: true
+jobs:
+  inner:
+    name: inner ${{ inputs.label }}
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        k: [x, y]
+    steps:
+      - run: true
+  plain:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: true
